@@ -1,0 +1,42 @@
+name: Azure Static Web Apps & Storage CI/CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+    branches:
+      - main
+
+jobs:
+  build_and_deploy_job:
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+    runs-on: ubuntu-latest
+    name: Build and Deploy Job
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: true
+          lfs: false
+
+      # [1] 기존 Static Web Apps 배포 (메인 주소용)
+      - name: Build And Deploy to SWA
+        id: builddeploy
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: "upload"
+          app_location: "/"
+          api_location: ""
+          output_location: "."
+          skip_app_build: true
+          deployment_environment: "production"
+
+      # [2] Storage Account 배포 (보안 키를 사용한 즉시 반영)
+      - name: Deploy to Azure Storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            az storage blob upload-batch -s ./ -d '$web' --account-name snowyoung61 --auth-mode key --overwrite true --account-key ${{ secrets.AZURE_STORAGE_KEY }}
