@@ -32,6 +32,7 @@ jobs:
           api_location: ""
           output_location: "."
           skip_app_build: true
+          deployment_environment: "production"
 
       # [2] Storage Account 배포 (보안 키를 사용한 즉시 반영)
       - name: Deploy to Azure Storage
